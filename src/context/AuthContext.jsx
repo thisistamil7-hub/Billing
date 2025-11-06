@@ -1,76 +1,36 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { logoutUser } from './authSlice';
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-const users = {
-  'admin@flowerfarm.com': {
-    password: 'FlowerFarm2024!',
-    role: 'admin',
-    name: 'Farm Admin',
-    email: 'admin@flowerfarm.com'
-  },
-  'manager@flowerfarm.com': {
-    password: 'Manager123!',
-    role: 'manager',
-    name: 'Farm Manager',
-    email: 'manager@flowerfarm.com'
-  },
-  'staff@flowerfarm.com': {
-    password: 'Staff456!',
-    role: 'staff',
-    name: 'Farm Staff',
-    email: 'staff@flowerfarm.com'
-  }
-};
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('flowerfarm_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  const logout = async () => {
+    if (user?.email) {
+      await dispatch(logoutUser({ email: user.email }));
+    } else {
+      // Fallback: clear local storage if no user email
+      localStorage.removeItem('flowerfarm_user');
+      localStorage.removeItem('flowerfarm_token');
     }
-    setLoading(false);
-  }, []);
-
-  const login = (email, password) => {
-    const userData = users[email];
-    if (userData && userData.password === password) {
-      const userInfo = {
-        name: userData.name,
-        email: userData.email,
-        role: userData.role
-      };
-      setUser(userInfo);
-      localStorage.setItem('flowerfarm_user', JSON.stringify(userInfo));
-      return { success: true, user: userInfo };
-    }
-    return { success: false, error: 'Invalid email or password' };
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('flowerfarm_user');
   };
 
   const value = {
     user,
-    login,
-    logout,
-    loading
+    isAuthenticated,
+    logout
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

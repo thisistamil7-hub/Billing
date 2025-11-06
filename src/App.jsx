@@ -1,8 +1,17 @@
 import React from "react";
-import AppRoutes from "./Routes.jsx"; // ✅ Import renamed component
+import { Provider } from 'react-redux';
+import { AuthProvider } from './context/AuthContext.jsx';
+import AppRoutesContent from "./Routes.jsx"; 
+import { Store } from "./Store/Store.js";
 
 function App() {
-  return <AppRoutes />;
+  return (
+    <Provider store={Store}>
+      <AuthProvider>
+        <AppRoutesContent />
+      </AuthProvider>
+    </Provider>
+  );
 }
 
 export default App;
